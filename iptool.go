@@ -34,12 +34,12 @@ func main() {
 	app.Commands = []cli.Command{
 		cli.Command{
 			Name:   "router",
-			Usage:  "Do a DNS request to myip.opendns.com to get your router IP address, using the same technique as in the command `dig +short myip.opendns.com @208.67.222.222` but using GO code.",
+			Usage:  "Do a DNS request to myip.opendns.com to get your router IP address",
 			Action: router_action,
 		},
 		cli.Command{
 			Name:   "ip",
-			Usage:  "Creates a simple UDP connection to Google or OpenDNS DNS servers and returns the source IP address",
+			Usage:  "Creates a simple UDP/53 connection to Google or OpenDNS and returns the source IP address",
 			Action: ip_action,
 		},
 	}
