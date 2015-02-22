@@ -1,6 +1,6 @@
 # iptool
 
-[ ![Download](https://api.bintray.com/packages/andresvia/tools/iptool/images/download.svg) ](https://bintray.com/andresvia/tools/iptool/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/andresvia/tools/iptool/images/download.svg) ](https://bintray.com/andresvia/tools/iptool/snapshot/view#files)
 
 	NAME:
 	   iptool - Opinionated tool to perform common queries on connected hosts
