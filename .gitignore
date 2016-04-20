@@ -26,3 +26,5 @@ _testmain.go
 .go*
 
 iptool
+iptool_*
+build_date.txt
