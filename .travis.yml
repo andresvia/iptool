@@ -11,4 +11,4 @@ deploy:
   file: iptool_*
   skip_cleanup: true
   on:
-    repo: andresvia/iptool
+    tags: true

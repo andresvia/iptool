@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var VERSION = "1.0.1"
+var VERSION = "1.0.2"
 
 var (
 	opendns_servers = map[string]int{
