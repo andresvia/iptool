@@ -3,17 +3,17 @@ all: docs binaries
 docs: README.md
 
 clean:
-	rm -f build_date.txt docs.go README.md iptool
+	rm -f build_date.txt docs.go README.md iptool iptool_*
 
 binaries: build_date.txt
 
 iptool: iptool.go
 	go get ./...
-	go build
+	[ "$(TRAVIS)" = true ] || go build
 
 build_date.txt: iptool
-	go get github.com/mitchellh/gox
-	gox -parallel=10
+	[ "$(TRAVIS)" != true ] || go get github.com/mitchellh/gox
+	[ "$(TRAVIS)" != true ] || gox -parallel=10
 	date > build_date.txt
 
 README.md: docs.go
