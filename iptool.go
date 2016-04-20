@@ -1,3 +1,5 @@
+/*
+ */
 package main
 
 import (
@@ -6,11 +8,12 @@ import (
 	"github.com/miekg/dns"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"time"
 )
 
-var VERSION = "1.0.0"
+var VERSION = "1.0.1"
 
 var (
 	opendns_servers = map[string]int{
@@ -27,7 +30,7 @@ var (
 func main() {
 	app := cli.NewApp()
 	app.Name = "iptool"
-	app.Usage = "Opinionated tool to perform common queries on connected hosts"
+	app.Usage = "Opinionated tool to perform common IP queries on connected hosts"
 	app.Author = "Andres Villarroel"
 	app.Email = "andres.via@gmail.com"
 	app.Version = VERSION
@@ -41,6 +44,16 @@ func main() {
 			Name:   "ip",
 			Usage:  "Creates a simple UDP/53 connection to Google or OpenDNS and returns the source IP address",
 			Action: ip_action,
+		},
+		cli.Command{
+			Name:   "lan",
+			Usage:  "alias of 'ip' command",
+			Action: ip_action,
+		},
+		cli.Command{
+			Name:   "docker",
+			Usage:  "Attempts to obtain docker host address from $DOCKER_HOST, docker.local or local.docker, defaults to loopback (127.0.0.1) if nothing works",
+			Action: docker_action,
 		},
 	}
 	app.Run(os.Args)
@@ -60,6 +73,51 @@ func dns_servers() map[string]int {
 		m[k] = v
 	}
 	return m
+}
+
+func docker_action(ctx *cli.Context) {
+	func_map := map[string]func(chan string, chan bool){
+		"DOCKER_HOST":  resolve_from_env,
+		"docker.local": func(s chan string, b chan bool) { resolve_from_lookup("docker.local", s, b) },
+		"local.docker": func(s chan string, b chan bool) { resolve_from_lookup("local.docker", s, b) },
+	}
+	resolve := make(chan string, len(func_map))
+	done := make(chan bool, len(func_map))
+	all_done := make(chan bool)
+	for _, fun := range func_map {
+		go fun(resolve, done)
+	}
+	go func() {
+		for i := len(func_map); i > 0; i-- {
+			<-done
+		}
+		all_done <- true
+	}()
+	select {
+	case info := <-resolve:
+		putinfo(info)
+	case <-all_done:
+		putinfo("127.0.0.1")
+	}
+}
+
+func resolve_from_env(resolve chan string, done chan bool) {
+	docker_host := os.Getenv("DOCKER_HOST")
+	if docker_host != "" {
+		if docker_url, err := url.Parse(docker_host); err == nil {
+			if host, _, err := net.SplitHostPort(docker_url.Host); err == nil {
+				resolve <- host
+			}
+		}
+	}
+	done <- true
+}
+
+func resolve_from_lookup(lookup_host string, resolve chan string, done chan bool) {
+	if names, err := net.LookupHost(lookup_host); err == nil {
+		resolve <- names[0]
+	}
+	done <- true
 }
 
 func ip_action(ctx *cli.Context) {
