@@ -5,6 +5,9 @@ docs: README.md
 clean:
 	rm -f build_date.txt docs.go README.md iptool iptool_*
 
+tag: iptool
+	git tag `./iptool version`
+
 binaries: build_date.txt
 
 iptool: iptool.go
@@ -28,4 +31,4 @@ docs.go: iptool
 	echo ' */'                        >> docs.go
 	echo 'package main'               >> docs.go
 
-.PHONY: all docs clean binaries
+.PHONY: all docs clean binaries tag

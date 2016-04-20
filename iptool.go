@@ -53,6 +53,11 @@ func main() {
 			Usage:  "Attempts to obtain docker host address from $DOCKER_HOST, docker.local or local.docker, defaults to loopback (127.0.0.1) if nothing works",
 			Action: docker_action,
 		},
+		cli.Command{
+			Name:   "version",
+			Usage:  "Version number only",
+			Action: func(ctx *cli.Context) { putinfo(app.Version) },
+		},
 	}
 	app.Run(os.Args)
 }
