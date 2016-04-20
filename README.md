@@ -11,7 +11,7 @@
     
         VERSION:
     
-    	1.0.1
+    	1.0.2
     
         AUTHOR(S):
     
@@ -23,6 +23,7 @@
     	ip		Creates a simple UDP/53 connection to Google or OpenDNS and returns the source IP address
     	lan		alias of 'ip' command
     	docker	Attempts to obtain docker host address from $DOCKER_HOST, docker.local or local.docker, defaults to loopback (127.0.0.1) if nothing works
+    	version	Version number only
     	help, h	Shows a list of commands or help for one command
     
         GLOBAL OPTIONS:
