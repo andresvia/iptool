@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var VERSION = "1.0.2"
+var VERSION = "1.0.3"
 
 var (
 	opendns_servers = map[string]int{
@@ -50,7 +50,7 @@ func main() {
 		},
 		cli.Command{
 			Name:   "docker",
-			Usage:  "Attempts to obtain docker host address from $DOCKER_HOST, docker.local or local.docker, defaults to loopback (127.0.0.1) if nothing works",
+			Usage:  "Obtain address from $DOCKER_HOST, docker.local or local.docker. If /var/run/docker.sock is a socket uses 'lan' or 127.0.0.1 if something answers on 2375 or 2376",
 			Action: docker_action,
 		},
 		cli.Command{
@@ -79,29 +79,64 @@ func dns_servers() map[string]int {
 }
 
 func docker_action(ctx *cli.Context) {
-	func_map := map[string]func(chan string, chan bool){
+	resolve_func_map := map[string]func(chan string, chan bool){
 		"DOCKER_HOST":  resolve_from_env,
 		"docker.local": func(s chan string, b chan bool) { resolve_from_lookup("docker.local", s, b) },
 		"local.docker": func(s chan string, b chan bool) { resolve_from_lookup("local.docker", s, b) },
 	}
-	resolve := make(chan string, len(func_map))
-	done := make(chan bool, len(func_map))
-	all_done := make(chan bool)
-	for _, fun := range func_map {
-		go fun(resolve, done)
+	port_func_map := map[string]func(chan bool, chan bool){
+		"2375": func(b1, b2 chan bool) { tcp_check("2375", b1, b2) },
+		"2376": func(b1, b2 chan bool) { tcp_check("2376", b1, b2) },
+	}
+	resolve_resolve := make(chan string, len(resolve_func_map))
+	resolve_done := make(chan bool, len(resolve_func_map))
+	resolve_all_done := make(chan bool)
+	port_resolve := make(chan bool, len(port_func_map))
+	port_done := make(chan bool, len(port_func_map))
+	port_all_done := make(chan bool)
+	for _, fun := range resolve_func_map {
+		go fun(resolve_resolve, resolve_done)
 	}
 	go func() {
-		for i := len(func_map); i > 0; i-- {
-			<-done
+		for i := len(resolve_func_map); i > 0; i-- {
+			<-resolve_done
 		}
-		all_done <- true
+		resolve_all_done <- true
+	}()
+	for _, fun := range port_func_map {
+		go fun(port_resolve, port_done)
+	}
+	go func() {
+		for i := len(port_func_map); i > 0; i-- {
+			<-port_done
+		}
+		port_all_done <- true
 	}()
 	select {
-	case info := <-resolve:
+	case info := <-resolve_resolve:
 		putinfo(info)
-	case <-all_done:
-		putinfo("127.0.0.1")
+	case <-resolve_all_done:
+		if file_info, err := os.Stat("/var/run/docker.sock"); err == nil {
+			if file_info.Mode()&os.ModeSocket == os.ModeSocket {
+				ip_action(ctx)
+				return
+			}
+		}
+		select {
+		case <-port_resolve:
+			putinfo("127.0.0.1")
+		case <-port_all_done:
+			log.Fatal("All options to get docker address exhausted")
+		}
 	}
+}
+
+func tcp_check(port string, resolve, done chan bool) {
+	if conn, err := net.Dial("tcp", "127.0.0.1:"+port); err == nil {
+		defer conn.Close()
+		resolve <- true
+	}
+	done <- true
 }
 
 func resolve_from_env(resolve chan string, done chan bool) {

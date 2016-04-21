@@ -11,7 +11,7 @@
     
         VERSION:
     
-    	1.0.2
+    	1.0.3
     
         AUTHOR(S):
     
@@ -22,7 +22,7 @@
     	router	Do a DNS request to myip.opendns.com to get your router IP address
     	ip		Creates a simple UDP/53 connection to Google or OpenDNS and returns the source IP address
     	lan		alias of 'ip' command
-    	docker	Attempts to obtain docker host address from $DOCKER_HOST, docker.local or local.docker, defaults to loopback (127.0.0.1) if nothing works
+    	docker	Obtain address from $DOCKER_HOST, docker.local or local.docker. If /var/run/docker.sock is a socket uses 'lan' or 127.0.0.1 if something answers on 2375 or 2376
     	version	Version number only
     	help, h	Shows a list of commands or help for one command
     
